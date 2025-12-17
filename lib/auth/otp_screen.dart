@@ -63,6 +63,7 @@ class _OtpScreenState extends State<OtpScreen> {
       Navigator.pushReplacementNamed(context, "/home");
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
+        
         const SnackBar(content: Text("Invalid OTP")),
       );
     } finally {
