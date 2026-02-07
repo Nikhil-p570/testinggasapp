@@ -69,19 +69,39 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
   }
 
   void _onOtpChange(int index, String value) {
+    // Handle paste of full OTP
     if (value.length > 1) {
-      final otp = value.substring(0, 6);
-      for (int i = 0; i < otp.length; i++) {
-        _otpControllers[i].text = otp[i];
-      }
-      _focusNodes[5].requestFocus();
+      setState(() {
+        final otp = value.substring(0, value.length > 6 ? 6 : value.length);
+        for (int i = 0; i < otp.length && i < 6; i++) {
+          _otpControllers[i].text = otp[i];
+        }
+        // Clear the current field to avoid duplication
+        if (index < 6) {
+          _otpControllers[index].text = otp.isNotEmpty ? otp[0] : '';
+        }
+        // Focus on the last filled box or the 6th box
+        if (otp.length >= 6) {
+          _focusNodes[5].requestFocus();
+        } else if (otp.length > 0) {
+          _focusNodes[otp.length - 1].requestFocus();
+        }
+      });
       return;
     }
 
+    // Limit to 1 character for single input
+    if (value.length > 1) {
+      _otpControllers[index].text = value[0];
+      return;
+    }
+
+    // Handle single character input
     if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
 
+    // Handle backspace
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
@@ -344,19 +364,9 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(6, (i) {
-                              return Container(
+                              return SizedBox(
                                 width: 48,
                                 height: 56,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF5F7FA),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _otpControllers[i].text.isNotEmpty
-                                        ? const Color(0xFF283593)
-                                        : Colors.grey.shade300,
-                                    width: 2,
-                                  ),
-                                ),
                                 child: TextField(
                                   controller: _otpControllers[i],
                                   focusNode: _focusNodes[i],
@@ -369,10 +379,31 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                                   ),
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(1),
                                   ],
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xFFF5F7FA),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF283593),
+                                        width: 2,
+                                      ),
+                                    ),
                                     contentPadding: EdgeInsets.zero,
                                   ),
                                   onChanged: (v) => _onOtpChange(i, v),
