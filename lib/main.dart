@@ -104,7 +104,7 @@ class VyomaApp extends StatelessWidget {
               vertical: 18,
             ),
           ),
-          cardTheme: CardTheme(
+          cardTheme: CardThemeData(
             elevation: 4,
             shadowColor: Colors.black.withOpacity(0.1),
             shape: RoundedRectangleBorder(

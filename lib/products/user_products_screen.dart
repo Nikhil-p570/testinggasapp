@@ -46,75 +46,35 @@ class _UserProductsScreenState extends State<UserProductsScreen> with SingleTick
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            toolbarHeight: 90,
             floating: false,
             pinned: true,
             automaticallyImplyLeading: false,
             backgroundColor: const Color(0xFF283593),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF1A237E),
-                      Color(0xFF283593),
-                      Color(0xFF3949AB),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.local_fire_department_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Vyoma Delivery",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Premium LPG Gas",
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                const SizedBox(width: 12),
+                const Text(
+                  "Vyoma Delivery",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+              ],
             ),
             actions: [
               IconButton(
@@ -185,7 +145,7 @@ class _UserProductsScreenState extends State<UserProductsScreen> with SingleTick
                           ),
                           _buildToggleButton(
                             context,
-                            title: "New Connection",
+                            title: "New Cylinder",
                             icon: Icons.add_circle_outline_rounded,
                             isSelected: !appState.isRefillMode,
                             onTap: () => appState.toggleOrderType(false),

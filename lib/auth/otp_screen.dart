@@ -380,7 +380,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                               );
                             }),
                           ),
-                          if (_errorMessage != null) ..[
+                          if (_errorMessage != null) ...[
                             const SizedBox(height: 20),
                             Container(
                               padding: const EdgeInsets.all(12),
