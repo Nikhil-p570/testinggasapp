@@ -14,186 +14,349 @@ class UserProductsScreen extends StatefulWidget {
   State<UserProductsScreen> createState() => _UserProductsScreenState();
 }
 
-class _UserProductsScreenState extends State<UserProductsScreen> {
+class _UserProductsScreenState extends State<UserProductsScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
-    // Calculate dynamic pricing or filtering based on refill vs new
-    // For now, we'll just show all products and assume price logic might be adjusted in future
-    // Or we can simulate price change on the UI side.
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'LPG Products',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: Color(0xFFE50914)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => OrderHistoryScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person, color: Color(0xFFE50914)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProfileScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          /* ---------------- TOGGLE: REFILL / NEW ---------------- */
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.white,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 180,
+            floating: false,
+            pinned: true,
+            automaticallyImplyLeading: false,
+            backgroundColor: const Color(0xFF283593),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF1A237E),
+                      Color(0xFF283593),
+                      Color(0xFF3949AB),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.local_fire_department_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Vyoma Delivery",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Premium LPG Gas",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              child: Row(
+            ),
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.history_rounded, color: Colors.white),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => OrderHistoryScreen()),
+                  );
+                },
+              ),
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.person_rounded, color: Colors.white),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ProfileScreen()),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
                 children: [
-                  _buildToggleButton(
-                    context,
-                    title: "Cylinder Refill",
-                    isSelected: appState.isRefillMode,
-                    onTap: () => appState.toggleOrderType(true),
+                  const SizedBox(height: 20),
+                  // TOGGLE: REFILL / NEW
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 15,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          _buildToggleButton(
+                            context,
+                            title: "Cylinder Refill",
+                            icon: Icons.autorenew_rounded,
+                            isSelected: appState.isRefillMode,
+                            onTap: () => appState.toggleOrderType(true),
+                          ),
+                          _buildToggleButton(
+                            context,
+                            title: "New Connection",
+                            icon: Icons.add_circle_outline_rounded,
+                            isSelected: !appState.isRefillMode,
+                            onTap: () => appState.toggleOrderType(false),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  _buildToggleButton(
-                    context,
-                    title: "New Connection",
-                    isSelected: !appState.isRefillMode,
-                    onTap: () => appState.toggleOrderType(false),
-                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-          
-          /* ---------------- PRODUCT GRID ---------------- */
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('products')
-                  .where('active', isEqualTo: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No products available',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
+          // PRODUCT GRID
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('products')
+                .where('active', isEqualTo: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF283593),
                     ),
-                  );
-                }
+                  ),
+                );
+              }
 
-                final products = snapshot.data!.docs;
+              if (snapshot.hasError) {
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                );
+              }
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: products.length,
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 80,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No products available',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final products = snapshot.data!.docs;
+
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.7,
+                    childAspectRatio: 0.72,
                   ),
-                  itemBuilder: (context, index) {
-                    final doc = products[index];
-                    final productData = doc.data() as Map<String, dynamic>;
-                    
-                    // Adjust price if New Cylinder mode (Logic: Base Price + 2500 Deposit)
-                    // This is CLIENT SIDE simulation. In real app, might want specific prices in DB.
-                    double basePrice = (productData['price'] ?? 951).toDouble();
-                    double finalPrice = appState.isRefillMode ? basePrice : basePrice + 1400; // Example deposit
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final doc = products[index];
+                      final productData = doc.data() as Map<String, dynamic>;
 
-                    final product = {
-                      ...productData,
-                      'id': doc.id,
-                      'price': finalPrice, // Override price for display/cart
-                    };
+                      double basePrice = (productData['price'] ?? 951).toDouble();
+                      double finalPrice = appState.isRefillMode ? basePrice : basePrice + 1400;
 
-                    return ProductCard(product: product);
-                  },
-                );
-              },
-            ),
+                      final product = {
+                        ...productData,
+                        'id': doc.id,
+                        'price': finalPrice,
+                      };
+
+                      return ProductCard(product: product);
+                    },
+                    childCount: products.length,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
-      /* ---------------- FLOATING CART BAR ---------------- */
-      bottomNavigationBar: appState.totalCartItems > 0 
+      // FLOATING CART BAR
+      bottomNavigationBar: appState.totalCartItems > 0
           ? Container(
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
+                    blurRadius: 20,
                     offset: const Offset(0, -4),
                   ),
                 ],
               ),
               child: SafeArea(
-                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CartScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE50914),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CartScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6F00),
+                      elevation: 8,
+                      shadowColor: const Color(0xFFFF6F00).withOpacity(0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "${appState.totalCartItems} Items | ₹${appState.totalCartValue.toStringAsFixed(0)}",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const Row(
-                        children: [
-                          Text(
-                            "View Cart",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 20),
-                        ],
-                      ),
-                    ],
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "${appState.totalCartItems}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              "₹${appState.totalCartValue.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Row(
+                          children: [
+                            Text(
+                              "View Cart",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.shopping_cart_rounded, size: 22),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -202,23 +365,57 @@ class _UserProductsScreenState extends State<UserProductsScreen> {
     );
   }
 
-  Widget _buildToggleButton(BuildContext context, {required String title, required bool isSelected, required VoidCallback onTap}) {
+  Widget _buildToggleButton(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE50914) : Colors.transparent,
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF283593).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [],
           ),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black54,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -226,96 +423,212 @@ class _UserProductsScreenState extends State<UserProductsScreen> {
   }
 }
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final Map<String, dynamic> product;
 
   const ProductCard({super.key, required this.product});
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final String productId = product['id'];
+    final String productId = widget.product['id'];
     final int qty = appState.getItemQuantity(productId);
 
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // IMAGE
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              color: const Color(0xFFFFE5E2),
-              child: product['imageUrl'] != null
-                  ? Image.network(product['imageUrl'], fit: BoxFit.contain)
-                  : const Icon(Icons.propane_tank, size: 60, color: Color(0xFFFF5C4D)),
-            ),
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: GestureDetector(
+        onTapDown: (_) => _scaleController.forward(),
+        onTapUp: (_) => _scaleController.reverse(),
+        onTapCancel: () => _scaleController.reverse(),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          
-          // DETAILS
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product['name'] ?? 'LPG Cylinder',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // IMAGE
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF283593).withOpacity(0.1),
+                        const Color(0xFFFF6F00).withOpacity(0.1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: widget.product['imageUrl'] != null
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                          child: Image.network(
+                            widget.product['imageUrl'],
+                            fit: BoxFit.contain,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.propane_tank_rounded,
+                          size: 60,
+                          color: Color(0xFF283593),
+                        ),
                 ),
-                Text(
-                  product['weight'] ?? '14.2 kg',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 6),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              // DETAILS
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '₹${product['price']}',
+                      widget.product['name'] ?? 'LPG Cylinder',
                       style: const TextStyle(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFE50914),
+                        fontSize: 15,
+                        color: Color(0xFF1A237E),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.product['weight'] ?? '14.2 kg',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                
-                // ADD / REMOVE BUTTONS
-                qty == 0
-                    ? SizedBox(
-                        width: double.infinity,
-                        height: 36,
-                        child: OutlinedButton(
-                          onPressed: () => appState.addToCart(product),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFE50914)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF6F00), Color(0xFFF57C00)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '₹${widget.product['price']}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                          child: const Text('Add', style: TextStyle(color: Color(0xFFE50914))),
                         ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildQtyBtn(Icons.remove, () => appState.removeFromCart(productId)),
-                          Text('$qty', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          _buildQtyBtn(Icons.add, () => appState.addToCart(product)),
-                        ],
-                      ),
-              ],
-            ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // ADD / REMOVE BUTTONS
+                    qty == 0
+                        ? SizedBox(
+                            width: double.infinity,
+                            height: 38,
+                            child: OutlinedButton(
+                              onPressed: () => appState.addToCart(widget.product),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFF283593),
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Add to Cart',
+                                style: TextStyle(
+                                  color: Color(0xFF283593),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            height: 38,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildQtyBtn(
+                                  Icons.remove_rounded,
+                                  () => appState.removeFromCart(productId),
+                                ),
+                                Text(
+                                  '$qty',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                _buildQtyBtn(
+                                  Icons.add_rounded,
+                                  () => appState.addToCart(widget.product),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -323,13 +636,10 @@ class ProductCard extends StatelessWidget {
   Widget _buildQtyBtn(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE50914),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 16, color: Colors.white),
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, size: 20, color: Colors.white),
       ),
     );
   }
