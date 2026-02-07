@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'otp_screen.dart';
-import 'login_screen.dart';  // Import LoginScreen
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String? prefilledPhone;
+  
+  const RegisterScreen({super.key, this.prefilledPhone});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,16 +17,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
+  final TextEditingController areaController = TextEditingController();
 
   bool isLoading = false;
+  bool _isPhoneChecking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefilledPhone != null) {
+      phoneController.text = widget.prefilledPhone!;
+    }
+  }
+
+  Future<bool> _checkPhoneNumberExists(String phone) async {
+    try {
+      setState(() {
+        _isPhoneChecking = true;
+      });
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone', isEqualTo: "+91$phone")
+          .limit(1)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      print("Error checking phone number: $e");
+      return false;
+    } finally {
+      setState(() {
+        _isPhoneChecking = false;
+      });
+    }
+  }
 
   void sendOtpForRegister() async {
     final name = nameController.text.trim();
     final phone = phoneController.text.trim();
     final address = addressController.text.trim();
+    final area = areaController.text.trim();
 
-    // 🔴 BASIC VALIDATION
-    if (name.isEmpty || phone.isEmpty || address.isEmpty) {
+    if (name.isEmpty || phone.isEmpty || address.isEmpty || area.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("All fields are required")),
       );
@@ -39,22 +75,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = true);
 
+    final phoneExists = await _checkPhoneNumberExists(phone);
+
+    if (phoneExists) {
+      setState(() => isLoading = false);
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text("Already Registered"),
+          content: Text(
+            "The phone number +91$phone is already registered. "
+            "Please login instead.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              child: const Text("Go to Login"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: "+91$phone", 
-
-      // 🔹 AUTO OTP (optional)
       verificationCompleted: (PhoneAuthCredential credential) async {
         await FirebaseAuth.instance.signInWithCredential(credential);
       },
-
       verificationFailed: (FirebaseAuthException e) {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? "OTP verification failed")),
         );
       },
-
-      // 🔑 MAIN FLOW
       codeSent: (String verificationId, int? resendToken) {
         setState(() => isLoading = false);
 
@@ -63,12 +129,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           MaterialPageRoute(
             builder: (_) => OtpScreen(
               verificationId: verificationId,
-              isLogin: false, // 🔥 REGISTER FLOW
+              isLogin: false,
+               name: name,
+                address: address,
+                area: area,
+                phone: phone,
+              // Only include parameters that exist in OtpScreen constructor
             ),
           ),
         );
       },
-
       codeAutoRetrievalTimeout: (String verificationId) {
         setState(() => isLoading = false);
       },
@@ -89,48 +159,96 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
+            
             TextField(
               controller: nameController,
               decoration: const InputDecoration(
                 labelText: "Full Name",
+                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: "Phone Number",
-                prefixText: "+91 ",
-              ),
+            
+            Stack(
+              children: [
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: "Phone Number",
+                    prefixText: "+91 ",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (_isPhoneChecking)
+                  Positioned(
+                    right: 10,
+                    top: 15,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
+            
             TextField(
               controller: addressController,
               maxLines: 2,
               decoration: const InputDecoration(
                 labelText: "Delivery Address",
-                hintText: "House no, Street, Area, City",
+                hintText: "House no, Street, City",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            TextField(
+              controller: areaController,
+              decoration: const InputDecoration(
+                labelText: "Area/Locality",
+                hintText: "Enter your area or locality name",
+                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 30),
+            
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton(
-                onPressed: isLoading ? null : sendOtpForRegister,
+                onPressed: isLoading || _isPhoneChecking ? null : sendOtpForRegister,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE50914),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Register & Verify"),
+                    : const Text(
+                        "Register & Verify",
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
             ),
             const SizedBox(height: 20),
+            
             Center(
               child: GestureDetector(
                 onTap: () {
-                  // Navigate to the login screen
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => LoginScreen()),
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
                 },
                 child: const Text(
@@ -143,6 +261,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            
+            if (_isPhoneChecking)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  "Checking phone number...",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

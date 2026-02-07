@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -11,7 +12,9 @@ import 'splash/splash_screen.dart';
 import 'auth/login_screen.dart';
 import 'auth/register_screen.dart';
 import 'home/home_screen.dart';
-
+import 'products/user_products_screen.dart';  // New product screen for users
+import 'cart/cart_screen.dart';  // New cart screen
+import 'profile/profile_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -83,6 +86,9 @@ class VyomaApp extends StatelessWidget {
           '/login': (_) => LoginScreen(),
           '/register': (_) => const RegisterScreen(),
           '/home': (_) => const HomeScreen(),
+          '/products': (_) => const UserProductsScreen(),  // User product page
+          '/cart': (_) => const CartScreen(),// Cart page
+          '/profile': (_) => const ProfileScreen(),  
         },
 
         home: const SplashScreen(),
