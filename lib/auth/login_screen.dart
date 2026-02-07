@@ -69,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isChecking = false;
       });
-      
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -135,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
             builder: (_) => OtpScreen(
               verificationId: verificationId,
               isLogin: true,
+              phone: phone,
             ),
           ),
         );
@@ -196,9 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
               ],
             ),
-            
             const SizedBox(height: 30),
-            
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -234,7 +233,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             
             const SizedBox(height: 20),
-            
             if (_isChecking)
               const Padding(
                 padding: EdgeInsets.all(8.0),
@@ -254,7 +252,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-            
             Center(
               child: GestureDetector(
                 onTap: () {
@@ -278,4 +275,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+  @override
+  void dispose() {
+    phoneController.dispose();
+    super.dispose();
+  }
 }
+
