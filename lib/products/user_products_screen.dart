@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import '../cart/cart_screen.dart';
+import '../order_history/order_history_screen.dart';
 import '../profile/profile_screen.dart';
 
 class UserProductsScreen extends StatefulWidget {
@@ -38,11 +39,20 @@ class _UserProductsScreenState extends State<UserProductsScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.history, color: Color(0xFFE50914)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => OrderHistoryScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.person, color: Color(0xFFE50914)),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                MaterialPageRoute(builder: (_) => ProfileScreen()),
               );
             },
           ),

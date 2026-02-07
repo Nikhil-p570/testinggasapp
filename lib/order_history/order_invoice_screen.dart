@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'dart:ui' as ui;
-import 'package:flutter/rendering.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class OrderInvoiceScreen extends StatefulWidget {
   final Map<String, dynamic> orderData;
@@ -40,75 +39,234 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
     }
   }
 
-  Future<void> _downloadInvoice() async {
+  Future<void> _shareInvoice() async {
     setState(() {
       _isDownloading = true;
     });
 
     try {
-      if (Platform.isAndroid) {
-        var status = await Permission.storage.status;
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-          if (!status.isGranted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Storage permission denied'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            setState(() {
-              _isDownloading = false;
-            });
-            return;
-          }
-        }
-      }
-
-      RenderRepaintBoundary boundary = _invoiceKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
-
-      Directory? directory;
-      if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) {
-          directory = await getExternalStorageDirectory();
-        }
-      } else {
-        directory = await getApplicationDocumentsDirectory();
-      }
-
+      final pdf = pw.Document();
       final orderId = widget.orderData['orderId'] ?? DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'invoice_$orderId.png';
-      final filePath = '${directory!.path}/$fileName';
 
-      File imgFile = File(filePath);
-      await imgFile.writeAsBytes(pngBytes);
+      // Get items list
+      final items = widget.orderData['items'] as List<dynamic>?;
+      final hasItems = items != null && items.isNotEmpty;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Invoice saved to: $filePath'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // HEADER
+                pw.Center(
+                  child: pw.Column(
+                    children: [
+                      pw.Text(
+                        'GAS DELIVERY SERVICE',
+                        style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'TAX INVOICE',
+                        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'GSTIN: 36AAAAA0000A1Z5',
+                        style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.Divider(thickness: 2),
+                pw.SizedBox(height: 20),
+
+                // ORDER DETAILS
+                pw.Text('Order Details', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                _pdfRow('Order ID', widget.orderData['orderId'] ?? 'N/A'),
+                _pdfRow('Date', _formatDate(widget.orderData['createdAt'])),
+                _pdfRow('Status', widget.orderData['status'] ?? 'Pending'),
+                _pdfRow('Payment Method', widget.orderData['paymentMethod'] ?? 'COD'),
+                pw.SizedBox(height: 20),
+
+                // CUSTOMER DETAILS
+                pw.Text('Customer Details', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                _pdfRow('Name', widget.orderData['userName'] ?? 'N/A'),
+                _pdfRow('Phone', widget.orderData['phone'] ?? 'N/A'),
+                _pdfRow('Address', widget.orderData['address'] ?? 'N/A'),
+                if (widget.orderData['area'] != null)
+                  _pdfRow('Area', widget.orderData['area']),
+                pw.SizedBox(height: 20),
+
+                // ITEMS TABLE
+                pw.Text('Items', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    // Header
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('Item', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('Price', style: pw.TextStyle(fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                        ),
+                      ],
+                    ),
+                    // Items
+                    if (hasItems)
+                      ...items.map((item) => pw.TableRow(
+                            children: [
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.all(8),
+                                child: pw.Column(
+                                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                  children: [
+                                    pw.Text(item['name'] ?? 'Product'),
+                                    if (item['weight'] != null)
+                                      pw.Text(item['weight'], style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                                  ],
+                                ),
+                              ),
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.all(8),
+                                child: pw.Text('${item['quantity'] ?? 1}', textAlign: pw.TextAlign.center),
+                              ),
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.all(8),
+                                child: pw.Text('Rs.${item['price'] ?? 0}', textAlign: pw.TextAlign.right),
+                              ),
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.all(8),
+                                child: pw.Text('Rs.${(item['price'] ?? 0) * (item['quantity'] ?? 1)}', textAlign: pw.TextAlign.right),
+                              ),
+                            ],
+                          ))
+                    else
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(widget.orderData['productName'] ?? 'Product'),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text('${widget.orderData['quantity'] ?? 1}', textAlign: pw.TextAlign.center),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text('Rs.${widget.orderData['price'] ?? 0}', textAlign: pw.TextAlign.right),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text('Rs.${widget.orderData['price'] ?? 0}', textAlign: pw.TextAlign.right),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+
+                // DELIVERY INFO
+                pw.Text('Delivery Information', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                _pdfRow('Type', widget.orderData['deliveryType'] ?? 'Normal'),
+                if (widget.orderData['deliverySlot'] != null)
+                  _pdfRow('Slot', widget.orderData['deliverySlot']),
+                pw.SizedBox(height: 20),
+
+                pw.Divider(thickness: 2),
+                pw.SizedBox(height: 10),
+
+                // TOTAL
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Total Amount:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(
+                      'Rs.${widget.orderData['totalAmount'] ?? widget.orderData['price'] ?? '0'}',
+                      style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 30),
+
+                pw.Center(
+                  child: pw.Text(
+                    'Thank you for your order!',
+                    style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       );
+
+      final directory = await getTemporaryDirectory();
+      final fileName = 'invoice_$orderId.pdf';
+      final filePath = '${directory.path}/$fileName';
+
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+
+      // Share the PDF
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        text: 'Order Invoice #$orderId',
+      );
+
     } catch (e) {
-      print("Error downloading invoice: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print("Error sharing invoice: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
 
-    setState(() {
-      _isDownloading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isDownloading = false;
+      });
+    }
+  }
+
+  pw.Widget _pdfRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        children: [
+          pw.SizedBox(
+            width: 120,
+            child: pw.Text('$label:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          ),
+          pw.Expanded(
+            child: pw.Text(value),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -119,7 +277,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
         backgroundColor: const Color(0xFFE50914),
         actions: [
           IconButton(
-            onPressed: _isDownloading ? null : _downloadInvoice,
+            onPressed: _isDownloading ? null : _shareInvoice,
             icon: _isDownloading
                 ? const SizedBox(
                     width: 20,
@@ -129,7 +287,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.download),
+                : const Icon(Icons.share),
           ),
         ],
       ),
@@ -147,44 +305,226 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // HEADER WITH COMPANY INFO
                     const Center(
-                      child: Text(
-                        "ORDER INVOICE",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFE50914),
-                        ),
+                      child: Column(
+                        children: [
+                          Text(
+                            "GAS DELIVERY SERVICE",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "TAX INVOICE",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFE50914),
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            "GSTIN: 36AAAAA0000A1Z5",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const Divider(height: 30, thickness: 2),
                     
+                    // ORDER DETAILS
                     _buildSection("Order Details"),
                     _row("Order ID", widget.orderData['orderId'] ?? 'N/A'),
                     _row("Date", _formatDate(widget.orderData['createdAt'])),
                     _row("Status", widget.orderData['status'] ?? 'Pending'),
+                    _row("Payment Method", widget.orderData['paymentMethod'] ?? 'COD'),
                     
                     const SizedBox(height: 20),
                     
-                    _buildSection("Product Information"),
-                    _row("Product", widget.orderData['productName'] ?? 'N/A'),
-                    _row("Price", "₹${widget.orderData['price'] ?? '0'}"),
-                    _row("Quantity", widget.orderData['quantity']?.toString() ?? '1'),
-                    
-                    const SizedBox(height: 20),
-                    
-                    _buildSection("Delivery Information"),
-                    _row("Type", widget.orderData['deliveryType'] ?? 'Standard'),
-                    _row("Address", widget.orderData['address'] ?? 'N/A'),
+                    // CUSTOMER DETAILS
+                    _buildSection("Customer Details"),
+                    _row("Name", widget.orderData['userName'] ?? 'N/A'),
                     _row("Phone", widget.orderData['phone'] ?? 'N/A'),
+                    _row("Address", widget.orderData['address'] ?? 'N/A'),
+                    if (widget.orderData['area'] != null)
+                      _row("Area", widget.orderData['area']),
                     
                     const SizedBox(height: 20),
                     
-                    _buildSection("Payment Information"),
-                    _row("Method", widget.orderData['paymentMethod'] ?? 'N/A'),
+                    // ITEMS TABLE
+                    _buildSection("Items"),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        children: [
+                          // Table Header
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(4),
+                                topRight: Radius.circular(4),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    "Item",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    "Qty",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    "Price",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    "Total",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Table Rows
+                          if (widget.orderData['items'] != null && (widget.orderData['items'] as List).isNotEmpty)
+                            ...((widget.orderData['items'] as List).map((item) => Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(color: Colors.grey.shade300),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item['name'] ?? 'Product',
+                                              style: const TextStyle(fontWeight: FontWeight.w500),
+                                            ),
+                                            if (item['weight'] != null)
+                                              Text(
+                                                item['weight'],
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Text(
+                                          "${item['quantity'] ?? 1}",
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          "₹${item['price'] ?? 0}",
+                                          textAlign: TextAlign.right,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          "₹${(item['price'] ?? 0) * (item['quantity'] ?? 1)}",
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )))
+                          else
+                            // Fallback for old orders
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(color: Colors.grey.shade300),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(widget.orderData['productName'] ?? 'Product'),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text(
+                                      "${widget.orderData['quantity'] ?? 1}",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      "₹${widget.orderData['price'] ?? 0}",
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      "₹${widget.orderData['price'] ?? 0}",
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // DELIVERY INFO
+                    _buildSection("Delivery Information"),
+                    _row("Type", widget.orderData['deliveryType'] ?? 'Normal'),
+                    if (widget.orderData['deliverySlot'] != null)
+                      _row("Slot", widget.orderData['deliverySlot']),
                     
                     const Divider(height: 30, thickness: 2),
                     
+                    // TOTAL AMOUNT
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -196,7 +536,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                           ),
                         ),
                         Text(
-                          "₹${widget.orderData['price'] ?? '0'}",
+                          "₹${widget.orderData['totalAmount'] ?? widget.orderData['price'] ?? '0'}",
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -206,7 +546,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                       ],
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     
                     const Center(
                       child: Text(
@@ -214,6 +554,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                         style: TextStyle(
                           fontStyle: FontStyle.italic,
                           color: Colors.grey,
+                          fontSize: 14,
                         ),
                       ),
                     ),

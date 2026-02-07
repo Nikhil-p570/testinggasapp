@@ -11,37 +11,17 @@ class OrderHistoryScreen extends StatelessWidget {
     if (user == null) return [];
 
     try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .where('uid', isEqualTo: user.uid)
-          .limit(1)
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('userId', isEqualTo: user.uid)
+          .orderBy('createdAt', descending: true)
           .get();
 
-      if (userDoc.docs.isEmpty) return [];
-
-      final userData = userDoc.docs.first.data();
-      final orderIDs = userData['orders_placed'] as List<dynamic>?;
-
-      if (orderIDs == null || orderIDs.isEmpty) return [];
-
-      final reversedOrderIDs = orderIDs.reversed.toList();
-
-      List<Map<String, dynamic>> orders = [];
-
-      for (var orderId in reversedOrderIDs) {
-        final orderDoc = await FirebaseFirestore.instance
-            .collection('orders')
-            .doc(orderId.toString())
-            .get();
-
-        if (orderDoc.exists) {
-          final orderData = orderDoc.data() as Map<String, dynamic>;
-          orderData['orderId'] = orderId.toString();
-          orders.add(orderData);
-        }
-      }
-
-      return orders;
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['orderId'] = doc.id;
+        return data;
+      }).toList();
     } catch (e) {
       print("Error fetching orders: $e");
       return [];
@@ -64,6 +44,21 @@ class OrderHistoryScreen extends StatelessWidget {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return 'N/A';
+    }
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -130,31 +125,30 @@ class OrderHistoryScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // HEADER: DATE & STATUS
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Text(
-                              order['productName'] ?? 'Order',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatDate(order['createdAt']),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
-                            ),
+                            ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade50,
+                              color: _getStatusColor(order['status']).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               order['status'] ?? 'Pending',
                               style: TextStyle(
-                                color: Colors.green.shade700,
+                                color: _getStatusColor(order['status']),
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -162,35 +156,62 @@ class OrderHistoryScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(order['createdAt']),
-                            style: const TextStyle(color: Colors.grey, fontSize: 13),
-                          ),
-                          const SizedBox(width: 16),
-                          const Icon(Icons.local_shipping, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            order['deliveryType'] ?? 'Standard',
-                            style: const TextStyle(color: Colors.grey, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
+
+                      // ITEMS LIST
+                      if (order['items'] != null && (order['items'] as List).isNotEmpty)
+                        ...((order['items'] as List).map((item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.propane_tank_outlined, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "${item['name']} (${item['weight'] ?? ''})",
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                  Text(
+                                    "x${item['quantity']}",
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            )))
+                      else
+                        // FALLBACK FOR OLD ORDERS
+                        Row(
+                          children: [
+                            const Icon(Icons.propane_tank_outlined, size: 16, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(order['productName'] ?? 'Product')),
+                            Text("x${order['quantity'] ?? 1}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+
+                      const Divider(height: 20),
+
+                      // FOOTER: TOTAL & INVOICE
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "₹${order['price'] ?? '0'}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFE50914),
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Total Amount",
+                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                              ),
+                              Text(
+                                "₹${order['totalAmount'] ?? order['price'] ?? '0'}",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFE50914),
+                                ),
+                              ),
+                            ],
                           ),
                           ElevatedButton.icon(
                             onPressed: () {
@@ -201,14 +222,12 @@ class OrderHistoryScreen extends StatelessWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.download, size: 16),
+                            icon: const Icon(Icons.description, size: 16),
                             label: const Text('Invoice'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE50914),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             ),
                           ),
                         ],
