@@ -849,6 +849,40 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
 
     try {
       final user = FirebaseAuth.instance.currentUser;
+      
+      // Fetch user name from Firestore if not available in appState
+      String userName = appState.userName ?? 'User';
+      print("📝 Initial userName from appState: $userName");
+      print("📝 User UID: ${user?.uid}");
+      
+      if (userName == 'User' && user != null) {
+        print("🔍 Fetching user name from Firestore...");
+        try {
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .where('uid', isEqualTo: user.uid)
+              .limit(1)
+              .get();
+          
+          print("📊 Query returned ${userDoc.docs.length} documents");
+          
+          if (userDoc.docs.isNotEmpty) {
+            final userData = userDoc.docs.first.data();
+            print("👤 User data from Firestore: $userData");
+            userName = userData['name'] ?? 'User';
+            print("✅ Fetched userName: $userName");
+          } else {
+            print("⚠️ No user document found for UID: ${user.uid}");
+          }
+        } catch (e) {
+          print("❌ Error fetching user name: $e");
+        }
+      } else {
+        print("ℹ️ Skipping Firestore fetch - userName already set or user is null");
+      }
+      
+      print("🎯 Final userName to be used: $userName");
+      
       final orderData = {
         'items': appState.cartItems.map((e) => e.toJson()).toList(),
         'totalAmount': totalAmount,
@@ -859,7 +893,7 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
         'area': _areaController.text.trim(),
         'phone': _phoneController.text.trim(),
         'userId': user?.uid,
-        'userName': appState.userName ?? 'User',
+        'userName': userName,
         'status': 'Pending',
         'paymentMethod': 'COD',
         'createdAt': FieldValue.serverTimestamp(),
