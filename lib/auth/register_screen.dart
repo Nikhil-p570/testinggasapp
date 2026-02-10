@@ -213,14 +213,20 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                          colors: [
+                            Color(0xFF1A237E),  // Deep Blue
+                            Color(0xFF3949AB),  // Medium Blue
+                            Color(0xFFC62828),  // Deep Red
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF283593).withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+                            color: const Color(0xFF283593).withOpacity(0.4),
+                            blurRadius: 25,
+                            offset: const Offset(0, 12),
                           ),
                         ],
                       ),
@@ -353,8 +359,20 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF283593),
                                 disabledBackgroundColor: Colors.grey.shade300,
-                                elevation: 8,
-                                shadowColor: const Color(0xFF283593).withOpacity(0.4),
+                                elevation: 10,
+                                shadowColor: const Color(0xFF283593).withOpacity(0.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ).copyWith(
+                                backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                                  (Set<MaterialState> states) {
+                                    if (states.contains(MaterialState.disabled)) {
+                                      return Colors.grey.shade300;
+                                    }
+                                    return const Color(0xFF283593);
+                                  },
+                                ),
                               ),
                               child: isLoading
                                   ? const SizedBox(

@@ -42,4 +42,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+  assets:
+    - assets/gaslogo-removebg-preview.png

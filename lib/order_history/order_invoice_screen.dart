@@ -273,8 +273,25 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Order Invoice"),
-        backgroundColor: const Color(0xFFE50914),
+        title: const Text(
+          "Order Invoice",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF283593),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF1A237E),  // Deep Blue
+                Color(0xFF3949AB),  // Medium Blue
+                Color(0xFFC62828),  // Deep Red
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             onPressed: _isDownloading ? null : _shareInvoice,
@@ -323,7 +340,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFE50914),
+                              color: Color(0xFF283593),
                             ),
                           ),
                           SizedBox(height: 8),
@@ -540,7 +557,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFE50914),
+                            color: Color(0xFF283593),
                           ),
                         ),
                       ],
@@ -576,7 +593,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Color(0xFFE50914),
+          color: Color(0xFF283593),
         ),
       ),
     );

@@ -50,7 +50,19 @@ class _UserProductsScreenState extends State<UserProductsScreen> with SingleTick
             floating: false,
             pinned: true,
             automaticallyImplyLeading: false,
-            backgroundColor: const Color(0xFF283593),
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF1A237E),  // Deep Blue
+                    Color(0xFF3949AB),  // Medium Blue
+                    Color(0xFFC62828),  // Deep Red
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
             title: Row(
               children: [
                 Container(
@@ -269,9 +281,12 @@ class _UserProductsScreenState extends State<UserProductsScreen> with SingleTick
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF6F00),
-                      elevation: 8,
-                      shadowColor: const Color(0xFFFF6F00).withOpacity(0.5),
+                      elevation: 10,
+                      shadowColor: const Color(0xFFFF6F00).withOpacity(0.6),
                       padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -342,7 +357,13 @@ class _UserProductsScreenState extends State<UserProductsScreen> with SingleTick
           decoration: BoxDecoration(
             gradient: isSelected
                 ? const LinearGradient(
-                    colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                    colors: [
+                      Color(0xFF1A237E),  // Deep Blue
+                      Color(0xFF3949AB),  // Medium Blue
+                      Color(0xFFC62828),  // Deep Red
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   )
                 : null,
             color: isSelected ? null : Colors.transparent,
@@ -350,8 +371,8 @@ class _UserProductsScreenState extends State<UserProductsScreen> with SingleTick
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF283593).withOpacity(0.3),
-                      blurRadius: 8,
+                      color: const Color(0xFF283593).withOpacity(0.4),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ]
@@ -557,7 +578,13 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                             height: 38,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                                colors: [
+                                  Color(0xFF1A237E),  // Deep Blue
+                                  Color(0xFF3949AB),  // Medium Blue
+                                  Color(0xFFC62828),  // Deep Red
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),

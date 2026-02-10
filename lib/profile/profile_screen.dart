@@ -54,9 +54,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
         if (userDoc.docs.isNotEmpty) {
           final userData = userDoc.docs.first.data();
+          String phone = userData['phone'] ?? '';
+          // Remove +91 prefix if present
+          if (phone.startsWith('+91')) {
+            phone = phone.substring(3).trim();
+          }
           setState(() {
             _nameController.text = userData['name'] ?? '';
-            _phoneController.text = userData['phone'] ?? '';
+            _phoneController.text = phone;
             _addressController.text = userData['address'] ?? '';
             _areaController.text = userData['area'] ?? '';
           });
@@ -224,17 +229,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   floating: false,
                   pinned: true,
                   backgroundColor: const Color(0xFF283593),
+                  iconTheme: const IconThemeData(color: Colors.white),
                   flexibleSpace: FlexibleSpaceBar(
                     background: Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xFF1A237E),
-                            Color(0xFF283593),
-                            Color(0xFF3949AB),
+                            Color(0xFF1A237E),  // Deep Blue
+                            Color(0xFF3949AB),  // Medium Blue
+                            Color(0xFFC62828),  // Deep Red
                           ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
                         ),
                       ),
                       child: SafeArea(
@@ -325,6 +331,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                       Icons.phone_rounded,
                                       color: Color(0xFF283593),
                                     ),
+                                    prefixText: '+91 ',
+                                    prefixStyle: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                   enabled: _isEditing,
                                   keyboardType: TextInputType.phone,
@@ -367,6 +379,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF283593),
                                       padding: const EdgeInsets.symmetric(vertical: 16),
+                                      elevation: 8,
+                                      shadowColor: const Color(0xFF283593).withOpacity(0.4),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                     ),
                                     child: _isSaving
                                         ? const SizedBox(

@@ -71,28 +71,23 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
   void _onOtpChange(int index, String value) {
     // Handle paste of full OTP
     if (value.length > 1) {
-      setState(() {
-        final otp = value.substring(0, value.length > 6 ? 6 : value.length);
-        for (int i = 0; i < otp.length && i < 6; i++) {
+      final otp = value.substring(0, value.length > 6 ? 6 : value.length);
+      
+      // Distribute the OTP across all fields
+      for (int i = 0; i < 6; i++) {
+        if (i < otp.length) {
           _otpControllers[i].text = otp[i];
+        } else {
+          _otpControllers[i].clear();
         }
-        // Clear the current field to avoid duplication
-        if (index < 6) {
-          _otpControllers[index].text = otp.isNotEmpty ? otp[0] : '';
-        }
-        // Focus on the last filled box or the 6th box
-        if (otp.length >= 6) {
-          _focusNodes[5].requestFocus();
-        } else if (otp.length > 0) {
-          _focusNodes[otp.length - 1].requestFocus();
-        }
-      });
-      return;
-    }
-
-    // Limit to 1 character for single input
-    if (value.length > 1) {
-      _otpControllers[index].text = value[0];
+      }
+      
+      // Focus on the last filled box or the 6th box
+      final lastIndex = otp.length >= 6 ? 5 : otp.length - 1;
+      if (lastIndex >= 0 && lastIndex < 6) {
+        _focusNodes[lastIndex].requestFocus();
+      }
+      
       return;
     }
 
@@ -304,14 +299,20 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                            colors: [
+                              Color(0xFF1A237E),  // Deep Blue
+                              Color(0xFF3949AB),  // Medium Blue
+                              Color(0xFFC62828),  // Deep Red
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF283593).withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              color: const Color(0xFF283593).withOpacity(0.4),
+                              blurRadius: 25,
+                              offset: const Offset(0, 12),
                             ),
                           ],
                         ),
@@ -448,9 +449,11 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                               onPressed: _isVerifying ? null : _verifyOtp,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF283593),
-                                elevation: 8,
-                                shadowColor:
-                                    const Color(0xFF283593).withOpacity(0.4),
+                                elevation: 10,
+                                shadowColor: const Color(0xFF283593).withOpacity(0.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
                               child: _isVerifying
                                   ? const SizedBox(

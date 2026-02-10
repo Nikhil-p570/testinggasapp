@@ -96,17 +96,18 @@ class OrderHistoryScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             backgroundColor: const Color(0xFF283593),
+            iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF1A237E),
-                      Color(0xFF283593),
-                      Color(0xFF3949AB),
+                      Color(0xFF1A237E),  // Deep Blue
+                      Color(0xFF3949AB),  // Medium Blue
+                      Color(0xFFC62828),  // Deep Red
                     ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
                 child: SafeArea(

@@ -73,7 +73,12 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
   void _loadUserData() {
     final appState = Provider.of<AppState>(context, listen: false);
     if (appState.userId != null) {
-      _phoneController.text = appState.phoneNumber ?? '';
+      String phone = appState.phoneNumber ?? '';
+      // Remove +91 prefix if present
+      if (phone.startsWith('+91')) {
+        phone = phone.substring(3).trim();
+      }
+      _phoneController.text = phone;
       if (appState.fullAddress != null) {
         _addressController.text = appState.fullAddress!;
       }
@@ -96,8 +101,13 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
             .get();
         if (doc.docs.isNotEmpty) {
           final data = doc.docs.first.data();
+          String phone = data['phone'] ?? '';
+          // Remove +91 prefix if present
+          if (phone.startsWith('+91')) {
+            phone = phone.substring(3).trim();
+          }
           setState(() {
-            _phoneController.text = data['phone'] ?? '';
+            _phoneController.text = phone;
             _addressController.text = data['address'] ?? '';
             _areaController.text = data['area'] ?? '';
           });
@@ -307,7 +317,13 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
                                   Container(
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [Color(0xFF283593), Color(0xFF5C6BC0)],
+                                        colors: [
+                                          Color(0xFF1A237E),  // Deep Blue
+                                          Color(0xFF3949AB),  // Medium Blue
+                                          Color(0xFFC62828),  // Deep Red
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -469,8 +485,19 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
                                             margin: const EdgeInsets.only(bottom: 8),
                                             padding: const EdgeInsets.all(12),
                                             decoration: BoxDecoration(
+                                              gradient: _selectedSlot == slot
+                                                  ? const LinearGradient(
+                                                      colors: [
+                                                        Color(0xFF1A237E),  // Deep Blue
+                                                        Color(0xFF3949AB),  // Medium Blue
+                                                        Color(0xFFC62828),  // Deep Red
+                                                      ],
+                                                      begin: Alignment.topLeft,
+                                                      end: Alignment.bottomRight,
+                                                    )
+                                                  : null,
                                               color: _selectedSlot == slot
-                                                  ? const Color(0xFF283593)
+                                                  ? null
                                                   : Colors.white,
                                               borderRadius: BorderRadius.circular(8),
                                               border: Border.all(
@@ -558,8 +585,9 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
                                         Text(
                                           'Delivery by today (+₹10/cylinder)',
                                           style: TextStyle(
-                                            color: Colors.grey,
+                                            color: Colors.green,
                                             fontSize: 13,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ],
@@ -694,6 +722,12 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
                             decoration: const InputDecoration(
                               labelText: 'Contact Number',
                               prefixIcon: Icon(Icons.phone_rounded, color: Color(0xFF283593)),
+                              prefixText: '+91 ',
+                              prefixStyle: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             keyboardType: TextInputType.phone,
                           ),
@@ -713,8 +747,11 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
                             : () => _placeOrder(appState, grandTotal),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF6F00),
-                          elevation: 8,
-                          shadowColor: const Color(0xFFFF6F00).withOpacity(0.5),
+                          elevation: 12,
+                          shadowColor: const Color(0xFFFF6F00).withOpacity(0.6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         child: _isPlacingOrder
                             ? const SizedBox(
